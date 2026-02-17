@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>教育費ピーク見える化（15分）</title>
+  <style>
+    :root { --bd:#e6e6e6; --fg:#111; --muted:#666; --bg:#fff; --card:#fafafa; }
+    body{ margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      color:var(--fg); background:var(--bg); }
+    .wrap{ max-width:980px; margin:0 auto; padding:18px 14px 40px; }
+    h1{ font-size:20px; margin:0 0 6px; }
+    .sub{ color:var(--muted); font-size:13px; line-height:1.5; margin-bottom:14px; }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width:900px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
+
+    .card{ border:1px solid var(--bd); border-radius:14px; padding:14px; background:var(--card); box-shadow: 0 1px 0 rgba(0,0,0,.03); }
+    .card h2{ font-size:15px; margin:0 0 10px; }
+    label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 6px; }
+    input, select, textarea{
+      width:100%; padding:10px 10px; border:1px solid var(--bd); border-radius:10px; background:#fff; font-size:14px; box-sizing:border-box;
+    }
+    textarea{ min-height:74px; resize:vertical; }
+    .row{ display:grid; grid-template-columns: 1fr; gap:10px; }
+    @media (min-width:650px){ .row{ grid-template-columns: 1fr 1fr; } }
+    .row3{ display:grid; grid-template-columns: 1fr; gap:10px; }
+    @media (min-width:650px){ .row3{ grid-template-columns: 1fr 1fr 1fr; } }
+
+    .btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    button{
+      border:1px solid var(--bd); background:#fff; border-radius:10px; padding:10px 12px; font-size:13px; cursor:pointer;
+    }
+    button.primary{ background:#111; color:#fff; border-color:#111; }
+    button.danger{ background:#fff5f5; border-color:#ffd0d0; }
+    .small{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5; }
+    .table{ width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px; border:1px solid var(--bd); background:#fff; }
+    .table th, .table td{ padding:10px 10px; border-bottom:1px solid var(--bd); font-size:13px; text-align:left; }
+    .table th{ background:#f3f3f3; }
+    .table tr:last-child td{ border-bottom:none; }
+    .right{ text-align:right; }
+    .pill{ display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid var(--bd); background:#fff; }
+    .risk{ font-weight:700; }
+    .r-green{ color:#0a7a2f; }
+    .r-yellow{ color:#8a6d00; }
+    .r-orange{ color:#b45309; }
+    .r-red{ color:#b91c1c; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .hr{ height:1px; background:var(--bd); margin:12px 0; }
+    .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+    .ok{ color:#0a7a2f; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>教育費ピーク見える化（15分）</h1>
+    <div class="sub">
+      目的：<b>進路パターン3つ（A/B/C）</b>を並べて、<b>年額・月額・残り年数の総額</b>を自動で出します。<br>
+      ※このツールは家計の「見える化」用です（正解探しではありません）。
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="card">
+        <h2>① 基本設定</h2>
+        <div class="row">
+          <div>
+            <label>残り年数（例：大学卒業まで）</label>
+            <input id="years" type="number" min="1" step="1" value="4" />
+            <div class="hint">例：あと4年、あと6年 など</div>
+          </div>
+          <div>
+            <label>教育費の上限（年）※任意</label>
+            <input id="capAnnual" type="number" min="0" step="1" placeholder="例：350（万円）" />
+            <div class="hint">入力すると「上限超え」を表示します（単位：万円）</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>手取り月収（任意）</label>
+            <input id="takehome" type="number" min="0" step="1" placeholder="例：45（万円）" />
+            <div class="hint">教育費が手取りの何％か目安を出します（単位：万円/月）</div>
+          </div>
+          <div>
+            <label>固定費（月）（任意）</label>
+            <input id="fixedMonthly" type="number" min="0" step="1" placeholder="例：25（万円）" />
+            <div class="hint">教育費＋固定費の圧迫感を目安表示（単位：万円/月）</div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <h2>② 進路パターン（A/B/C）を入力（年額）</h2>
+        <div class="hint">ここは “ざっくりでOK”。あとから精度を上げれば大丈夫。</div>
+
+        <div class="card" style="background:#fff; margin-top:10px;">
+          <div class="row3">
+            <div>
+              <label>パターンA 名称</label>
+              <input id="aName" value="A：国公立想定" />
+            </div>
+            <div>
+              <label>パターンB 名称</label>
+              <input id="bName" value="B：私立想定" />
+            </div>
+            <div>
+              <label>パターンC 名称</label>
+              <input id="cName" value="C：別ルート想定" />
+            </div>
+          </div>
+
+          <div class="row3">
+            <div>
+              <label>パターンA 年額合計（万円/年）</label>
+              <input id="aAnnual" type="number" min="0" step="1" placeholder="例：250" />
+            </div>
+            <div>
+              <label>パターンB 年額合計（万円/年）</label>
+              <input id="bAnnual" type="number" min="0" step="1" placeholder="例：350" />
+            </div>
+            <div>
+              <label>パターンC 年額合計（万円/年）</label>
+              <input id="cAnnual" type="number" min="0" step="1" placeholder="例：180" />
+            </div>
+          </div>
+
+          <label>補足メモ（任意）</label>
+          <textarea id="memo" placeholder="例：息子150万＋娘200万で重複時350〜400万。家計の上限を先に決めたい。"></textarea>
+
+          <div class="btns">
+            <button class="primary" id="calcBtn">計算する</button>
+            <button id="saveBtn">保存（自動復元）</button>
+            <button class="danger" id="resetBtn">リセット</button>
+          </div>
+          <div class="small">保存すると、このページを閉じても次回同じ端末では入力が戻ります（localStorage）。</div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card">
+        <h2>③ 結果（年額・月額・残り年数総額）</h2>
+        <table class="table" id="resultTable">
+          <thead>
+            <tr>
+              <th>パターン</th>
+              <th class="right">年額</th>
+              <th class="right">月額</th>
+              <th class="right">残り年数の総額</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="4" class="small">左で入力して「計算する」を押してください。</td></tr>
+          </tbody>
+        </table>
+
+        <div class="hr"></div>
+
+        <h2>④ 目安（任意入力がある場合）</h2>
+        <div id="riskBox" class="small">手取り月収を入れると、教育費の割合の目安が出ます。</div>
+
+        <div class="hr"></div>
+
+        <h2>⑤ note用：コピペ文（自動生成）</h2>
+        <textarea id="copyText" class="mono" readonly placeholder="計算後に自動生成します。"></textarea>
+        <div class="btns">
+          <button id="copyBtn">コピー</button>
+        </div>
+        <div id="copied" class="ok" style="display:none;">コピーしました。</div>
+
+        <div class="small">
+          ※割合の色分けは便宜的な目安です（家庭状況で適切な比率は変わります）。<br>
+          目的は「不安を煽る」ではなく、「数字を見て順番を決める」ことです。
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  const fmt = (n)=> (isFinite(n) ? n.toLocaleString('ja-JP') : '—');
+  const num = (v)=> {
+    const x = parseFloat(String(v).replace(/[^\d.-]/g,''));
+    return isFinite(x) ? x : 0;
+  };
+
+  const fields = [
+    'years','capAnnual','takehome','fixedMonthly',
+    'aName','bName','cName','aAnnual','bAnnual','cAnnual','memo'
+  ];
+
+  function save(){
+    const data = {};
+    fields.forEach(k=> data[k] = $(k).value);
+    localStorage.setItem('edu_peak_v1', JSON.stringify(data));
+  }
+
+  function load(){
+    const raw = localStorage.getItem('edu_peak_v1');
+    if(!raw) return;
+    try{
+      const data = JSON.parse(raw);
+      fields.forEach(k=> { if(data[k] !== undefined) $(k).value = data[k]; });
+    }catch(e){}
+  }
+
+  function reset(){
+    localStorage.removeItem('edu_peak_v1');
+    location.reload();
+  }
+
+  function riskClass(p){
+    // p: education monthly / takehome monthly
+    if(!isFinite(p)) return {cls:'', label:'—'};
+    if(p < 0.15) return {cls:'r-green', label:'低め（目安）'};
+    if(p < 0.25) return {cls:'r-yellow', label:'注意（目安）'};
+    if(p < 0.35) return {cls:'r-orange', label:'高め（目安）'};
+    return {cls:'r-red', label:'危険（目安）'};
+  }
+
+  function makeRow(name, annual, years, cap){
+    const monthly = annual / 12;
+    const total = annual * years;
+    const capFlag = cap > 0 ? (annual > cap) : false;
+    return {name, annual, monthly, total, capFlag};
+  }
+
+  function calc(){
+    const years = Math.max(1, Math.round(num($('years').value)));
+    $('years').value = years;
+
+    const capAnnual = num($('capAnnual').value); // 万円/年
+    const takehome = num($('takehome').value);   // 万円/月
+    const fixedMonthly = num($('fixedMonthly').value); // 万円/月
+
+    const A = makeRow($('aName').value.trim() || 'A', num($('aAnnual').value), years, capAnnual);
+    const B = makeRow($('bName').value.trim() || 'B', num($('bAnnual').value), years, capAnnual);
+    const C = makeRow($('cName').value.trim() || 'C', num($('cAnnual').value), years, capAnnual);
+
+    const rows = [A,B,C].filter(r => r.annual > 0 || r.name);
+
+    // render table
+    const tbody = $('tbody');
+    tbody.innerHTML = '';
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      const capMark = r.capFlag ? ' <span class="pill r-red">上限超え</span>' : '';
+      tr.innerHTML = `
+        <td>${escapeHtml(r.name)}${capMark}</td>
+        <td class="right">${fmt(r.annual)} 万円</td>
+        <td class="right">${fmt(round2(r.monthly))} 万円</td>
+        <td class="right">${fmt(r.total)} 万円</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // risk box
+    const riskBox = $('riskBox');
+    if(takehome > 0){
+      const best = rows.reduce((acc, r)=> {
+        // show for each pattern
+        const p = (r.monthly / takehome);
+        return acc.concat([{name:r.name, p, monthly:r.monthly}]);
+      }, []);
+
+      const lines = best.map(x=>{
+        const rc = riskClass(x.p);
+        const pct = Math.round(x.p * 100);
+        const eduPlusFixed = (fixedMonthly>0) ? (x.monthly + fixedMonthly) : null;
+        const eduPlusFixedPct = (fixedMonthly>0) ? Math.round((eduPlusFixed/takehome)*100) : null;
+        return `
+          <div style="margin:6px 0;">
+            <span class="pill">${escapeHtml(x.name)}</span>
+            教育費：<span class="risk ${rc.cls}">${pct}%</span>（${rc.label}）
+            ${fixedMonthly>0 ? ` ／ 教育費＋固定費：<span class="risk ${riskClass(eduPlusFixed/takehome).cls}">${eduPlusFixedPct}%</span>` : ''}
+          </div>
+        `;
+      }).join('');
+      riskBox.innerHTML = `
+        <div class="small">
+          <div class="hint">手取り月収：${fmt(takehome)}万円 / 固定費：${fixedMonthly>0? fmt(fixedMonthly)+'万円':''}</div>
+          ${lines}
+          <div class="hint">※色分けは目安。家庭状況で適正は変わります。</div>
+        </div>
+      `;
+    } else {
+      riskBox.textContent = '手取り月収を入れると、教育費の割合の目安が出ます。';
+    }
+
+    // copy text for note
+    const memo = $('memo').value.trim();
+    const capLine = capAnnual>0 ? `教育費の上限（年）：${fmt(capAnnual)}万円\n` : '';
+    const takeLine = takehome>0 ? `手取り月収：${fmt(takehome)}万円（月）\n` : '';
+    const fixedLine = fixedMonthly>0 ? `固定費：${fmt(fixedMonthly)}万円（月）\n` : '';
+
+    const blocks = rows.map(r=>{
+      const monthly = round2(r.monthly);
+      const total = r.total;
+      const capFlag = (capAnnual>0 && r.annual>capAnnual) ? '（上限超え）' : '';
+      return `・${r.name}${capFlag}\n  年額：${fmt(r.annual)}万円 / 月額：${fmt(monthly)}万円 / 残り${years}年総額：${fmt(total)}万円`;
+    }).join('\n');
+
+    const action = [
+      `【15分ワーク】進路パターン3つを並べて、年額・月額・総額を先に出す。`,
+      `次に「上限（年）」を1行で決める（無理なら“検討範囲”だけでも決める）。`
+    ].join('\n');
+
+    $('copyText').value =
+`【教育費ピーク見える化（残り${years}年）】
+${capLine}${takeLine}${fixedLine}${blocks}
+${memo ? `\n【メモ】\n${memo}\n` : '\n'}${action}`;
+  }
+
+  function round2(x){ return Math.round(x*100)/100; }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  }
+
+  // events
+  $('calcBtn').addEventListener('click', ()=>{ calc(); });
+  $('saveBtn').addEventListener('click', ()=>{ save(); calc(); });
+  $('resetBtn').addEventListener('click', ()=>{ reset(); });
+
+  $('copyBtn').addEventListener('click', async ()=>{
+    const text = $('copyText').value || '';
+    try{
+      await navigator.clipboard.writeText(text);
+      $('copied').style.display = 'block';
+      setTimeout(()=> $('copied').style.display = 'none', 1200);
+    }catch(e){
+      // fallback
+      $('copyText').focus();
+      $('copyText').select();
+      document.execCommand('copy');
+      $('copied').style.display = 'block';
+      setTimeout(()=> $('copied').style.display = 'none', 1200);
+    }
+  });
+
+  // load + gentle defaults for your case
+  load();
+  // If empty, set your real-world example as a starter (optional)
+  if(!$('aAnnual').value && !$('bAnnual').value && !$('cAnnual').value){
+    $('bAnnual').value = 350; // 例：重複時 350〜400 の下限を初期値に
+    $('memo').value = '例：息子150万＋娘200万。重複時は年350〜400万。数字を先に出して、上限ルールを決める。';
+  }
+})();
+</script>
+</body>
+</html>
